@@ -1,81 +1,43 @@
 import React, { useState } from "react";
-import { gql, useQuery, useMutation } from "@apollo/client";
 
-const ALL_PEOPLE = gql`
-  query AllPeople {
-    people {
-      id
-      name
-    }
-  }
-`;
-
-const ADD_PERSON = gql`
-  mutation AddPerson($name: String) {
-    addPerson(name: $name) {
-      id
-      name
-    }
-  }
-`;
+import Person from './Person';
 
 export default function App() {
-  const [name, setName] = useState('');
-  const {
-    loading,
-    data,
-  } = useQuery(ALL_PEOPLE);
+    const [visible, setVisible] = useState(true);
 
-  const [addPerson] = useMutation(ADD_PERSON, {
-    update: (cache, { data: { addPerson: addPersonData } }) => {
-      const peopleResult = cache.readQuery({ query: ALL_PEOPLE });
-
-      cache.writeQuery({
-        query: ALL_PEOPLE,
-        data: {
-          ...peopleResult,
-          people: [
-            ...peopleResult.people,
-            addPersonData,
-          ],
-        },
-      });
-    },
-  });
+    const handleVisibilityToggle = () => {
+        setVisible((visible) => !visible);
+    };
 
   return (
     <main>
       <h1>Apollo Client Issue Reproduction</h1>
-      <p>
-        This application can be used to demonstrate an error in Apollo Client.
-      </p>
-      <div className="add-person">
-        <label htmlFor="name">Name</label>
-        <input 
-          type="text" 
-          name="name" 
-          value={name}
-          onChange={evt => setName(evt.target.value)}
-        />
-        <button
-          onClick={() => {
-            addPerson({ variables: { name } });
-            setName('');
-          }}
-        >
-          Add person
-        </button>
-      </div>
-      <h2>Names</h2>
-      {loading ? (
-        <p>Loading…</p>
-      ) : (
-        <ul>
-          {data?.people.map(person => (
-            <li key={person.id}>{person.name}</li>
-          ))}
-        </ul>
-      )}
+        <p>
+            Scenario:
+        </p>
+        <div style={{ display: 'flex' }}>
+            <div>
+                <ol>
+                    <li>Select <b>John Smith</b> from from dropdown</li>
+                    <li>Look into developers tools console</li>
+                    <li><b>Resolve person with ID 1</b> should be logged out</li>
+                    <li>Clear messages in console</li>
+                    <li>Click on "Toggle visibility" button to hide and then again to show person view (component with query is unmounted and mounted again)</li>
+                    <li>Select <b>Sara Smith</b> from dropdown</li>
+                    <li>Look into developers tools console</li>
+                    <li>2 messages: <b>Resolve person with ID 2</b> and <b>Resolve person with ID 1</b> will be logged out</li>
+                    <li>Clear messages in console</li>
+                    <li>Click on "Toggle visibility" button to hide and then again to show person view</li>
+                    <li>Select <b>Budd Deey</b> from dropdown</li>
+                    <li>Look into developers tools console</li>
+                    <li>3 messages: <b>Resolve person with ID 3</b>, <b>Resolve person with ID 1</b> and <b>Resolve person with ID 2</b> will be logged out</li>
+                </ol>
+            </div>
+            <div style={{ background: '#f0f0f0', flex: '1 1 auto', marginLeft: '20px', padding: '10px' }}>
+                <button type="button" onClick={handleVisibilityToggle} style={{ marginBottom: '20px' }}>Toggle visibility</button>
+                {visible && <Person />}
+            </div>
+        </div>
     </main>
   );
 }
